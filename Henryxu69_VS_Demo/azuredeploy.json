@@ -26,10 +26,70 @@
       "metadata": {
         "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
       }
+    },
+    "webtestType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ]
+    },
+    "webtestName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "webtestAdminUserName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "webtestAdminPassword": {
+      "type": "securestring"
+    },
+    "webtestWindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2012-R2-Datacenter",
+      "allowedValues": [
+        "2008-R2-SP1",
+        "2012-Datacenter",
+        "2012-R2-Datacenter",
+        "Windows-Server-Technical-Preview"
+      ]
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Auto-generated token to access _artifactsLocation"
+      }
     }
   },
   "variables": {
-    "Henryxu69-Demo-WebappName": "[concat('Henryxu69-Demo-Webapp', uniqueString(resourceGroup().id))]"
+    "Henryxu69-Demo-WebappName": "[concat('Henryxu69-Demo-Webapp', uniqueString(resourceGroup().id))]",
+    "testPrefix": "10.0.0.0/16",
+    "testSubnet1Name": "Subnet-1",
+    "testSubnet1Prefix": "10.0.0.0/24",
+    "testSubnet2Name": "Subnet-2",
+    "testSubnet2Prefix": "10.0.1.0/24",
+    "webtestName": "[concat('webtest', uniqueString(resourceGroup().id))]",
+    "webtestImagePublisher": "MicrosoftWindowsServer",
+    "webtestImageOffer": "WindowsServer",
+    "webtestOSDiskName": "webtestOSDisk",
+    "webtestVmSize": "Standard_D2_v2",
+    "webtestVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'test')]",
+    "webtestSubnetRef": "[concat(variables('webtestVnetID'), '/subnets/', variables('testSubnet1Name'))]",
+    "webtestStorageAccountContainerName": "vhds",
+    "webtestNicName": "[concat(parameters('webtestName'), 'NetworkInterface')]",
+    "testArchiveFolder": "DSC",
+    "testArchiveFileName": "test.zip"
   },
   "resources": [
     {
@@ -66,6 +126,155 @@
         "name": "[variables('Henryxu69-Demo-WebappName')]",
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('BasicName'))]"
       }
+    },
+    {
+      "name": "test",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "test"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('testPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('testSubnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('testSubnet1Prefix')]"
+            }
+          },
+          {
+            "name": "[variables('testSubnet2Name')]",
+            "properties": {
+              "addressPrefix": "[variables('testSubnet2Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('webtestName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-01-01",
+      "sku": {
+        "name": "[parameters('webtestType')]"
+      },
+      "dependsOn": [ ],
+      "tags": {
+        "displayName": "webtest"
+      },
+      "kind": "Storage"
+    },
+    {
+      "name": "[variables('webtestNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2016-03-30",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'test')]"
+      ],
+      "tags": {
+        "displayName": "webtestNic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('webtestSubnetRef')]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[parameters('webtestName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('webtestName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('webtestNicName'))]"
+      ],
+      "tags": {
+        "displayName": "webtest"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('webtestVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('webtestName')]",
+          "adminUsername": "[parameters('webtestAdminUsername')]",
+          "adminPassword": "[parameters('webtestAdminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('webtestImagePublisher')]",
+            "offer": "[variables('webtestImageOffer')]",
+            "sku": "[parameters('webtestWindowsOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "webtestOSDisk",
+            "vhd": {
+              "uri": "[concat(reference(resourceId('Microsoft.Storage/storageAccounts', variables('webtestName')), '2016-01-01').primaryEndpoints.blob, variables('webtestStorageAccountContainerName'), '/', variables('webtestOSDiskName'), '.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('webtestNicName'))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "name": "Microsoft.Powershell.DSC",
+          "type": "extensions",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2016-03-30",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', parameters('webtestName'))]"
+          ],
+          "tags": {
+            "displayName": "test"
+          },
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.9",
+            "autoUpgradeMinorVersion": true,
+            "settings": {
+              "configuration": {
+                "url": "[concat(parameters('_artifactsLocation'), '/', variables('testArchiveFolder'), '/', variables('testArchiveFileName'))]",
+                "script": "test.ps1",
+                "function": "Main"
+              },
+              "configurationArguments": {
+                "nodeName": "[parameters('webtestName')]"
+              }
+            },
+            "protectedSettings": {
+              "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
+            }
+          }
+        }
+      ]
     }
   ],
   "outputs": {  }
