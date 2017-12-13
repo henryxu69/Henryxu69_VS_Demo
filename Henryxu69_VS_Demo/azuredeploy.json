@@ -1,6 +1,7 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+  "outputs": {},
   "parameters": {
     "BasicName": {
       "type": "string",
@@ -60,23 +61,6 @@
       ]
     }
   },
-  "variables": {
-    "Henryxu69-Demo-WebappName": "[concat('Henryxu69-Demo-Webapp', uniqueString(resourceGroup().id))]",
-    "testPrefix": "10.0.0.0/16",
-    "testSubnet1Name": "Subnet-1",
-    "testSubnet1Prefix": "10.0.0.0/24",
-    "testSubnet2Name": "Subnet-2",
-    "testSubnet2Prefix": "10.0.1.0/24",
-    "webtestName": "[concat('webtest', uniqueString(resourceGroup().id))]",
-    "webtestImagePublisher": "MicrosoftWindowsServer",
-    "webtestImageOffer": "WindowsServer",
-    "webtestOSDiskName": "webtestOSDisk",
-    "webtestVmSize": "Standard_D2_v2",
-    "webtestVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'test')]",
-    "webtestSubnetRef": "[concat(variables('webtestVnetID'), '/subnets/', variables('testSubnet1Name'))]",
-    "webtestStorageAccountContainerName": "vhds",
-    "webtestNicName": "[concat(parameters('webtestName'), 'NetworkInterface')]"
-  },
   "resources": [
     {
       "name": "[parameters('BasicName')]",
@@ -118,7 +102,7 @@
       "type": "Microsoft.Network/virtualNetworks",
       "location": "[resourceGroup().location]",
       "apiVersion": "2016-03-30",
-      "dependsOn": [ ],
+      "dependsOn": [],
       "tags": {
         "displayName": "test"
       },
@@ -152,7 +136,7 @@
       "sku": {
         "name": "[parameters('webtestType')]"
       },
-      "dependsOn": [ ],
+      "dependsOn": [],
       "tags": {
         "displayName": "webtest"
       },
@@ -230,5 +214,21 @@
       }
     }
   ],
-  "outputs": {  }
+  "variables": {
+    "Henryxu69-Demo-WebappName": "[concat('Henryxu69-Demo-Webapp', uniqueString(resourceGroup().id))]",
+    "testPrefix": "10.0.0.0/16",
+    "testSubnet1Name": "Subnet-1",
+    "testSubnet1Prefix": "10.0.0.0/24",
+    "testSubnet2Name": "Subnet-2",
+    "testSubnet2Prefix": "10.0.1.0/24",
+    "webtestName": "[concat('webtest', uniqueString(resourceGroup().id))]",
+    "webtestImagePublisher": "MicrosoftWindowsServer",
+    "webtestImageOffer": "WindowsServer",
+    "webtestOSDiskName": "webtestOSDisk",
+    "webtestVmSize": "Standard_D2_v2",
+    "webtestVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'test')]",
+    "webtestSubnetRef": "[concat(variables('webtestVnetID'), '/subnets/', variables('testSubnet1Name'))]",
+    "webtestStorageAccountContainerName": "vhds",
+    "webtestNicName": "[concat(parameters('webtestName'), 'NetworkInterface')]"
+  }
 }
