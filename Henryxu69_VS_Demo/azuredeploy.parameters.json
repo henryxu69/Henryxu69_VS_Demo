@@ -4,6 +4,12 @@
   "parameters": {
     "BasicName": {
       "value": "Basic"
+    },
+    "webtestName": {
+      "value": "hxu"
+    },
+    "webtestAdminUserName": {
+      "value": "hxu"
     }
   }
 }

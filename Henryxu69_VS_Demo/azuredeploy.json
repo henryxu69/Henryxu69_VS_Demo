@@ -58,18 +58,6 @@
         "2012-R2-Datacenter",
         "Windows-Server-Technical-Preview"
       ]
-    },
-    "_artifactsLocation": {
-      "type": "string",
-      "metadata": {
-        "description": "Auto-generated container in staging storage account to receive post-build staging folder upload"
-      }
-    },
-    "_artifactsLocationSasToken": {
-      "type": "securestring",
-      "metadata": {
-        "description": "Auto-generated token to access _artifactsLocation"
-      }
     }
   },
   "variables": {
@@ -87,9 +75,7 @@
     "webtestVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'test')]",
     "webtestSubnetRef": "[concat(variables('webtestVnetID'), '/subnets/', variables('testSubnet1Name'))]",
     "webtestStorageAccountContainerName": "vhds",
-    "webtestNicName": "[concat(parameters('webtestName'), 'NetworkInterface')]",
-    "testArchiveFolder": "DSC",
-    "testArchiveFileName": "test.zip"
+    "webtestNicName": "[concat(parameters('webtestName'), 'NetworkInterface')]"
   },
   "resources": [
     {
@@ -241,40 +227,7 @@
             }
           ]
         }
-      },
-      "resources": [
-        {
-          "name": "Microsoft.Powershell.DSC",
-          "type": "extensions",
-          "location": "[resourceGroup().location]",
-          "apiVersion": "2016-03-30",
-          "dependsOn": [
-            "[resourceId('Microsoft.Compute/virtualMachines', parameters('webtestName'))]"
-          ],
-          "tags": {
-            "displayName": "test"
-          },
-          "properties": {
-            "publisher": "Microsoft.Powershell",
-            "type": "DSC",
-            "typeHandlerVersion": "2.9",
-            "autoUpgradeMinorVersion": true,
-            "settings": {
-              "configuration": {
-                "url": "[concat(parameters('_artifactsLocation'), '/', variables('testArchiveFolder'), '/', variables('testArchiveFileName'))]",
-                "script": "test.ps1",
-                "function": "Main"
-              },
-              "configurationArguments": {
-                "nodeName": "[parameters('webtestName')]"
-              }
-            },
-            "protectedSettings": {
-              "configurationUrlSasToken": "[parameters('_artifactsLocationSasToken')]"
-            }
-          }
-        }
-      ]
+      }
     }
   ],
   "outputs": {  }
